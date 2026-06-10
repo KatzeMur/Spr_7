@@ -1,8 +1,11 @@
 import pytest
 import requests
-from constants import BASE_URL
+import allure
+from constants import BASE_URL, ORDERS_ENDPOINT
+from data.orders_data import ORDER_PAYLOAD_TEMPLATE
 
 class TestCreateOrder:
+    @allure.title("Создание заказа с различными комбинациями цветов")
     @pytest.mark.parametrize("color", [
         ["BLACK"],
         ["GREY"],
@@ -10,27 +13,24 @@ class TestCreateOrder:
         []
     ])
     def test_create_order_with_colors(self, color):
-        payload = {
-            "firstName": "Тестин",
-            "lastName": "Тестинов",
-            "address": "Улица Тестовая, дом 1",
-            "metroStation": 1,
-            "phone": "+79991234567",
-            "rentTime": 1,
-            "deliveryDate": "2024-12-31",
-            "comment": "Тестовый заказ",
-            "color": color
-        }
+        with allure.step("Формирование payload заказа с добавлением цвета"):
+            payload = ORDER_PAYLOAD_TEMPLATE.copy()
+            payload["color"] = color
         
-        response = requests.post(f'{BASE_URL}/api/v1/orders', json=payload)
+        with allure.step("Отправка POST-запроса на создание заказа"):
+            response = requests.post(f'{BASE_URL}{ORDERS_ENDPOINT}', json=payload)
         
-        assert response.status_code == 201
-        assert "track" in response.json()
+        with allure.step("Проверка кода ответа и наличия track в теле ответа"):
+            assert response.status_code == 201
+            assert "track" in response.json()
 
 class TestGetOrdersList:
+    @allure.title("Получение списка заказов")
     def test_get_orders_list(self):
-        response = requests.get(f'{BASE_URL}/api/v1/orders')
+        with allure.step("Отправка GET-запроса на получение списка заказов"):
+            response = requests.get(f'{BASE_URL}{ORDERS_ENDPOINT}')
         
-        assert response.status_code == 200
-        assert "orders" in response.json()
-        
+        with allure.step("Проверка кода ответа и наличия orders в теле ответа"):
+            assert response.status_code == 200
+            assert "orders" in response.json()
+            
